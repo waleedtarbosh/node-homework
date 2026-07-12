@@ -14,8 +14,10 @@ app.post("/testpost", (req, res) => {
   });
 });
 
-const port = process.env.PORT || 3000;
+const timeRouter = require("./routes/timeRoutes");
+app.use("/api", timeRouter);
 
+const port = process.env.PORT || 3000;
 const server = app.listen(port, () => {
   console.log(`Server is listening on port ${port}...`);
 });
