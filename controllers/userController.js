@@ -2,24 +2,24 @@ if (!global.users) global.users = [];
 if (typeof global.user_id === "undefined") global.user_id = null;
 
 const register = (req, res) => {
-  const { username, password } = req.body;
+  const { name, email, password } = req.body;
   
-  const newUser = { id: Date.now().toString(), username, password };
+  const newUser = { id: Date.now().toString(), name, email, password };
   global.users.push(newUser);
   
-  global.user_id = newUser.id;
+  global.user_id = newUser; 
   
-  res.status(201).json({ message: "User registered successfully", user: newUser });
+  res.status(201).json({ name: newUser.name, email: newUser.email });
 };
 
 const logon = (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
   
-  const user = global.users.find(u => u.username === username && u.password === password);
+  const user = global.users.find(u => u.email === email && u.password === password);
   
   if (user) {
-    global.user_id = user.id;
-    res.status(200).json({ message: "Logon successful" });
+    global.user_id = user;
+    res.status(200).json({ name: user.name, email: user.email });
   } else {
     res.status(401).json({ error: "Invalid credentials" });
   }

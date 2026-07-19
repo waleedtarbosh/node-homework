@@ -1,5 +1,9 @@
 const notFound = (req, res) => {
-  res.status(404).json({ error: "Route not found" });
+  console.warn("WARN: NotFoundError - Route not found");
+  res.status(404).json({
+    error: "Route not found",
+    requestId: req.requestId,
+  });
 };
 
 module.exports = notFound;
