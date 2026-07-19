@@ -21,13 +21,13 @@ const logon = (req, res) => {
     global.user_id = user;
     res.status(200).json({ name: user.name, email: user.email });
   } else {
-    res.status(401).json({ error: "Invalid credentials" });
+    res.status(401).send();
   }
 };
 
 const logoff = (req, res) => {
   global.user_id = null;
-  res.status(200).json({ message: "Logoff successful" });
+  res.status(200).send();
 };
 
 module.exports = {
