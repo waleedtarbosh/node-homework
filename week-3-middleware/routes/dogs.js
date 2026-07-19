@@ -11,14 +11,15 @@ router.get("/dogs", (req, res) => {
 router.post("/adopt", (req, res, next) => {
   const { name, address, email, dogName } = req.body;
 
-  if (!name || !address || !email || !dogName) {
+  if (!req.body || Object.keys(req.body).length === 0) {
     return next(new ValidationError("Missing required fields"));
   }
 
-  const dog = dogs.find(d => d.name === dogName);
-
-  if (!dog || dog.available === false) {
-    return next(new NotFoundError("not found or not available"));
+  if (dogName) {
+    const dog = dogs.find((d) => d.name === dogName);
+    if (!dog || dog.available === false) {
+      return next(new NotFoundError("not found or not available"));
+    }
   }
 
   res.status(201).json({
