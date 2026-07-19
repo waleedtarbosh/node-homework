@@ -1,6 +1,13 @@
 const express = require("express");
-
 const app = express();
+
+const userRoutes = require("./routes/userRoutes");
+const notFound = require("./middleware/not-found");
+const errorHandler = require("./middleware/error-handler");
+
+global.user_id = null;
+global.users = [];
+global.tasks = [];
 
 app.use(express.json());
 
@@ -17,17 +24,15 @@ app.post("/testpost", (req, res) => {
 const timeRouter = require("./routes/timeRoutes");
 app.use("/api", timeRouter);
 
-app.use((req, res) => {
-  res.status(404).json({
-    message: `No route found for ${req.method} ${req.path}`,
-  });
-});
+app.use("/api/users", userRoutes);
+
+app.use(notFound);
+app.use(errorHandler);
 
 const port = process.env.PORT || 3000;
 const server = app.listen(port, () => {
   console.log(`Server is listening on port ${port}...`);
 });
-
 
 server.on("error", (err) => {
   if (err.code === "EADDRINUSE") {
