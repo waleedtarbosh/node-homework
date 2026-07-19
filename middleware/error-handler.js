@@ -3,13 +3,13 @@ const errorHandler = (err, req, res, next) => {
   const statusCode = err.statusCode || 500;
 
   if (statusCode >= 400 && statusCode < 500) {
-    console.warn(`WARN: ${err.constructor.name} - ${err.message}`);
+    console.warn(`WARN: ${err.name} - ${err.message}`);
   } else {
-    console.error(`ERROR: ${err.constructor.name} - ${err.message}`);
+    console.error(`ERROR: ${err.name} - ${err.message}`);
   }
 
   res.status(statusCode).json({
-    error: err.message || "Internal Server Error",
+    error: statusCode === 500 ? "Internal Server Error" : err.message,
     requestId: req.requestId,
   });
 };

@@ -4,6 +4,20 @@ const dogsRouter = require("./routes/dogs");
 const path = require("path");
 const app = express();
 
+// 1. Request ID middleware
+app.use((req, res, next) => {
+  req.requestId = randomUUID();
+  res.setHeader("X-Request-Id", req.requestId);
+  next();
+});
+
+// 2. Logging middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}]: ${req.method} ${req.path} (${req.requestId})`);
+  next();
+});
+
+// 3. Security headers middleware
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -11,21 +25,13 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use((req, res, next) => {
-  req.requestId = randomUUID();
-  res.setHeader("X-Request-Id", req.requestId);
-  next();
-});
-
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}]: ${req.method} ${req.path} (${req.requestId})`);
-  next();
-});
-
+// 4. JSON parsing middleware (with size limit)
 app.use(express.json({ limit: "1mb" }));
 
+// 5. Static file middleware
 app.use(express.static(path.join(__dirname, "public")));
 
+// 6. Content-type validation middleware
 app.use((req, res, next) => {
   if (req.method === "POST" && !req.is("application/json")) {
     return res.status(400).json({
@@ -36,8 +42,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// 7. Dog routes
 app.use("/", dogsRouter);
 
+// 8. 404 handler
 app.use((req, res) => {
   res.status(404).json({
     error: "Route not found",
@@ -45,16 +53,17 @@ app.use((req, res) => {
   });
 });
 
+// 9. Error handler
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
-  
+
   if (statusCode >= 400 && statusCode < 500) {
     console.warn(`WARN: ${err.name} - ${err.message}`);
   } else {
     console.error(`ERROR: ${err.name} - ${err.message}`);
   }
-  
+
   res.status(statusCode).json({
     error: statusCode === 500 ? "Internal Server Error" : err.message,
     requestId: req.requestId,
