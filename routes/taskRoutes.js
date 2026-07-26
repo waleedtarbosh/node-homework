@@ -1,5 +1,5 @@
 const express = require("express");
-const router = express.express();
+const router = express.Router();
 const {
   create,
   index,
