@@ -20,15 +20,12 @@ async function comparePassword(inputPassword, storedHash) {
   return crypto.timingSafeEqual(keyBuffer, derivedKey);
 }
 
-const register = async (req, res, next) => {
+const register = async (req, res, next = () => {}) => {
   if (!req.body) req.body = {};
 
   const { error, value } = userSchema.validate(req.body, { abortEarly: false });
   if (error) {
-    return res.status(400).json({
-      message: "Validation failed",
-      details: error.details,
-    });
+    return res.status(400).json({ message: error.message });
   }
 
   try {
@@ -41,10 +38,9 @@ const register = async (req, res, next) => {
     );
 
     const newUser = result.rows[0];
-    
-    global.user_id = newUser.id; 
+    global.user_id = newUser.id;
 
-    res.status(201).json({ name: newUser.name, email: newUser.email });
+    return res.status(201).json({ name: newUser.name, email: newUser.email });
   } catch (e) {
     if (e.code === "23505") {
       return res.status(400).json({ message: "Email already registered" });
@@ -53,7 +49,7 @@ const register = async (req, res, next) => {
   }
 };
 
-const logon = async (req, res, next) => {
+const logon = async (req, res, next = () => {}) => {
   if (!req.body) req.body = {};
   const { email, password } = req.body;
 
@@ -65,14 +61,13 @@ const logon = async (req, res, next) => {
     }
 
     const user = result.rows[0];
-
     const goodCredentials = await comparePassword(password, user.hashed_password);
 
     if (goodCredentials) {
       global.user_id = user.id;
-      res.status(200).json({ name: user.name, email: user.email });
+      return res.status(200).json({ name: user.name, email: user.email });
     } else {
-      res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid email or password" });
     }
   } catch (err) {
     return next(err);
@@ -81,7 +76,7 @@ const logon = async (req, res, next) => {
 
 const logoff = (req, res) => {
   global.user_id = null;
-  res.status(200).send();
+  return res.status(200).send();
 };
 
 module.exports = {
