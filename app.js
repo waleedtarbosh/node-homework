@@ -26,6 +26,10 @@ app.use("/api", timeRouter);
 
 app.use("/api/users", userRoutes);
 
+const authMiddleware = require("./middleware/auth");
+const taskRouter = require("./routes/taskRoutes");
+app.use("/api/tasks", authMiddleware, taskRouter);
+
 app.use(notFound);
 app.use(errorHandler);
 
