@@ -38,7 +38,7 @@ const index = async (req, res, next = () => {}) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(200).json([]);
+      return res.status(404).json({ message: "No tasks found for this user." });
     }
 
     const formattedRows = result.rows.map(row => ({
