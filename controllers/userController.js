@@ -25,7 +25,10 @@ const register = async (req, res, next = () => {}) => {
 
   const { error, value } = userSchema.validate(req.body, { abortEarly: false });
   if (error) {
-    return res.status(400).json({ message: error.message });
+    return res.status(400).json({
+      message: "Validation failed",
+      details: error.details,
+    });
   }
 
   try {

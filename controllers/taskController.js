@@ -6,7 +6,10 @@ const create = async (req, res, next = () => {}) => {
   
   const { error, value } = taskSchema.validate(req.body, { abortEarly: false });
   if (error) {
-    return res.status(400).json({ message: error.message });
+    return res.status(400).json({
+      message: "Validation failed",
+      details: error.details,
+    });
   }
 
   try {
@@ -35,7 +38,7 @@ const index = async (req, res, next = () => {}) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: "No tasks found for this user." });
+      return res.status(200).json([]);
     }
 
     const formattedRows = result.rows.map(row => ({
@@ -82,7 +85,10 @@ const update = async (req, res, next = () => {}) => {
 
   const { error, value: taskChange } = patchTaskSchema.validate(req.body, { abortEarly: false });
   if (error) {
-    return res.status(400).json({ message: error.message });
+    return res.status(400).json({
+      message: "Validation failed",
+      details: error.details,
+    });
   }
 
   const taskId = parseInt(req.params?.id);
@@ -92,6 +98,9 @@ const update = async (req, res, next = () => {}) => {
 
   try {
     let keys = Object.keys(taskChange);
+    if (keys.length === 0) {
+      return res.status(400).json({ message: "No fields to update provided." });
+    }
     keys = keys.map((key) => key === "isCompleted" ? "is_completed" : key);
     const setClauses = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
     const idParm = `$${keys.length + 1}`;
