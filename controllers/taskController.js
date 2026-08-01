@@ -20,7 +20,6 @@ const create = async (req, res, next = () => {}) => {
     return res.status(201).json({
       id: newTask.id,
       title: newTask.title,
-      isCompleted: newTask.is_completed,
       is_completed: newTask.is_completed
     });
   } catch (err) {
@@ -42,7 +41,6 @@ const index = async (req, res, next = () => {}) => {
     const formattedRows = result.rows.map(row => ({
       id: row.id,
       title: row.title,
-      isCompleted: row.is_completed,
       is_completed: row.is_completed
     }));
 
@@ -72,7 +70,6 @@ const show = async (req, res, next = () => {}) => {
     return res.status(200).json({
       id: row.id,
       title: row.title,
-      isCompleted: row.is_completed,
       is_completed: row.is_completed
     });
   } catch (err) {
@@ -83,7 +80,7 @@ const show = async (req, res, next = () => {}) => {
 const update = async (req, res, next = () => {}) => {
   if (!req.body) req.body = {};
 
-  const { error, value: taskChange } = patchTaskSchema.validate(req.body, { abortEarly: false, allowUnknown: true });
+  const { error, value: taskChange } = patchTaskSchema.validate(req.body, { abortEarly: false });
   if (error) {
     return res.status(400).json({ message: error.message });
   }
@@ -93,33 +90,16 @@ const update = async (req, res, next = () => {}) => {
     return res.status(400).json({ message: "The task ID passed is not valid." });
   }
 
-  const updates = [];
-  const values = [];
-  let paramIndex = 1;
-
-  if (taskChange.title !== undefined) {
-    updates.push(`title = $${paramIndex++}`);
-    values.push(taskChange.title);
-  }
-
-  if (taskChange.isCompleted !== undefined) {
-    updates.push(`is_completed = $${paramIndex++}`);
-    values.push(taskChange.isCompleted);
-  }
-
-  if (updates.length === 0) {
-    return res.status(400).json({ message: "No fields to update provided." });
-  }
-
-  values.push(taskId);
-  values.push(global.user_id);
-
   try {
-    const queryText = `UPDATE tasks SET ${updates.join(", ")} 
-                       WHERE id = $${paramIndex++} AND user_id = $${paramIndex++} 
-                       RETURNING id, title, is_completed`;
-
-    const result = await pool.query(queryText, values);
+    let keys = Object.keys(taskChange);
+    keys = keys.map((key) => key === "isCompleted" ? "is_completed" : key);
+    const setClauses = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
+    const idParm = `$${keys.length + 1}`;
+    const userParm = `$${keys.length + 2}`;
+    const result = await pool.query(
+      `UPDATE tasks SET ${setClauses} WHERE id = ${idParm} AND user_id = ${userParm} RETURNING id, title, is_completed`,
+      [...Object.values(taskChange), taskId, global.user_id]
+    );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Task not found." });
@@ -129,7 +109,6 @@ const update = async (req, res, next = () => {}) => {
     return res.status(200).json({
       id: row.id,
       title: row.title,
-      isCompleted: row.is_completed,
       is_completed: row.is_completed
     });
   } catch (err) {
@@ -157,7 +136,6 @@ const deleteTask = async (req, res, next = () => {}) => {
     return res.status(200).json({
       id: row.id,
       title: row.title,
-      isCompleted: row.is_completed,
       is_completed: row.is_completed
     });
   } catch (err) {
