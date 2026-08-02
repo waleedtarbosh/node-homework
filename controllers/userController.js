@@ -32,10 +32,7 @@ const register = async (req, res, next = () => {}) => {
   }
 
   try {
-    const existingUser = await pool.query("SELECT id FROM users WHERE email = $1", [value.email]);
-    if (existingUser.rows.length > 0) {
-      return res.status(400).json({ message: "Email already registered" });
-    }
+
 
     const hashedPassword = await hashPassword(value.password);
 
