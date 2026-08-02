@@ -11,7 +11,7 @@ SELECT product_id FROM products ORDER BY price ASC LIMIT 5;
 
 BEGIN;
 INSERT INTO orders (customer_id, employee_id, date) VALUES ((SELECT customer_id FROM customers WHERE customer_name = 'Perez and Sons'), (SELECT employee_id FROM employees WHERE first_name = 'Miranda' AND last_name = 'Harris'), '2023-11-01') RETURNING order_id;
-INSERT INTO line_items (order_id, product_id, quantity) VALUES (251, 23, 1), (251, 18, 1), (251, 43, 1), (251, 9, 1), (251, 44, 1);
+INSERT INTO line_items (order_id, product_id, quantity) SELECT $1, product_id, 10 FROM products ORDER BY price ASC LIMIT 5;
 COMMIT;
 
 SELECT * FROM line_items WHERE order_id = 251;
