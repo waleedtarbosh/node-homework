@@ -14,7 +14,7 @@ INSERT INTO orders (customer_id, employee_id, date) VALUES ((SELECT customer_id 
 INSERT INTO line_items (order_id, product_id, quantity) SELECT $1, product_id, 10 FROM products ORDER BY price ASC LIMIT 5;
 COMMIT;
 
-SELECT * FROM line_items WHERE order_id = 251;
+SELECT * FROM line_items WHERE order_id = (SELECT MAX(order_id) FROM orders);
 
 # Task 4: Employees with more than 5 orders
 SELECT employees.first_name, employees.last_name, COUNT(orders.order_id) AS order_count FROM employees JOIN orders ON employees.employee_id = orders.employee_id GROUP BY employees.employee_id, employees.first_name, employees.last_name HAVING COUNT(orders.order_id) > 5 ORDER BY employees.last_name;
