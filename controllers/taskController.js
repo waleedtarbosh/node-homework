@@ -64,8 +64,10 @@ const show = async (req, res, next = () => {}) => {
   try {
     const task = await prisma.task.findUniqueOrThrow({
       where: {
-        id: taskId,
-        userId: global.user_id,
+        id_userId: {
+          id: taskId,
+          userId: global.user_id,
+        },
       },
       select: { id: true, title: true, isCompleted: true },
     });
@@ -77,7 +79,7 @@ const show = async (req, res, next = () => {}) => {
     });
   } catch (err) {
     if (err.code === "P2025") {
-      return res.status(404).json({ message: "Task not found." });
+      return res.status(404).json({ message: "The task was not found." });
     }
     return next(err);
   }
@@ -107,8 +109,10 @@ const update = async (req, res, next = () => {}) => {
 
     const updatedTask = await prisma.task.update({
       where: {
-        id: taskId,
-        userId: global.user_id,
+        id_userId: {
+          id: taskId,
+          userId: global.user_id,
+        },
       },
       data: taskChange,
       select: { id: true, title: true, isCompleted: true },
@@ -121,7 +125,7 @@ const update = async (req, res, next = () => {}) => {
     });
   } catch (err) {
     if (err.code === "P2025") {
-      return res.status(404).json({ message: "Task not found." });
+      return res.status(404).json({ message: "The task was not found." });
     }
     return next(err);
   }
@@ -136,8 +140,10 @@ const deleteTask = async (req, res, next = () => {}) => {
   try {
     const deletedTask = await prisma.task.delete({
       where: {
-        id: taskId,
-        userId: global.user_id,
+        id_userId: {
+          id: taskId,
+          userId: global.user_id,
+        },
       },
       select: { id: true, title: true, isCompleted: true },
     });
@@ -149,7 +155,7 @@ const deleteTask = async (req, res, next = () => {}) => {
     });
   } catch (err) {
     if (err.code === "P2025") {
-      return res.status(404).json({ message: "Task not found." });
+      return res.status(404).json({ message: "The task was not found." });
     }
     return next(err);
   }
