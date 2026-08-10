@@ -32,11 +32,12 @@ const register = async (req, res, next = () => {}) => {
   }
 
   try {
+    const normalizedEmail = value.email ? value.email.toLowerCase() : value.email;
     const hashedPassword = await hashPassword(value.password);
 
     const newUser = await prisma.user.create({
       data: { 
-        email: value.email, 
+        email: normalizedEmail, 
         name: value.name, 
         hashedPassword: hashedPassword 
       },
@@ -45,7 +46,7 @@ const register = async (req, res, next = () => {}) => {
 
     global.user_id = newUser.id;
 
-    return res.status(201).json({ name: newUser.name, email: newUser.email });
+    return res.status(201).json({ id: newUser.id, name: newUser.name, email: newUser.email });
   } catch (e) {
     if (e.code === "P2002") {
       return res.status(400).json({ message: "Email already registered" });
@@ -59,12 +60,10 @@ const logon = async (req, res, next = () => {}) => {
   let { email, password } = req.body;
 
   try {
-    if (email) {
-      email = email.toLowerCase();
-    }
+    const normalizedEmail = email ? email.toLowerCase() : email;
 
     const user = await prisma.user.findUnique({ 
-      where: { email: email }
+      where: { email: normalizedEmail }
     });
 
     if (!user) {
