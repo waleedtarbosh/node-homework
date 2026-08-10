@@ -39,6 +39,10 @@ const index = async (req, res, next = () => {}) => {
       select: { id: true, title: true, isCompleted: true },
     });
 
+    if (tasks.length === 0) {
+      return res.status(404).json({ message: "No tasks found for this user." });
+    }
+
     const formattedRows = tasks.map((row) => ({
       id: row.id,
       title: row.title,
@@ -52,8 +56,8 @@ const index = async (req, res, next = () => {}) => {
 };
 
 const show = async (req, res, next = () => {}) => {
-  const taskId = parseInt(req.params?.id);
-  if (!taskId || isNaN(taskId)) {
+  const id = parseInt(req.params?.id);
+  if (!id || isNaN(id)) {
     return res.status(400).json({ message: "The task ID passed is not valid." });
   }
 
@@ -61,7 +65,7 @@ const show = async (req, res, next = () => {}) => {
     const task = await prisma.task.findUnique({
       where: {
         id_userId: {
-          id: taskId,
+          id: id,
           userId: global.user_id,
         },
       },
@@ -69,9 +73,7 @@ const show = async (req, res, next = () => {}) => {
     });
 
     if (!task) {
-      const error = new Error("The task was not found.");
-      error.code = "P2025";
-      throw error;
+      return res.status(404).json({ message: "The task was not found." });
     }
 
     return res.status(200).json({
@@ -98,8 +100,8 @@ const update = async (req, res, next = () => {}) => {
     });
   }
 
-  const taskId = parseInt(req.params?.id);
-  if (!taskId || isNaN(taskId)) {
+  const id = parseInt(req.params?.id);
+  if (!id || isNaN(id)) {
     return res.status(400).json({ message: "The task ID passed is not valid." });
   }
 
@@ -112,7 +114,7 @@ const update = async (req, res, next = () => {}) => {
     const updatedTask = await prisma.task.update({
       where: {
         id_userId: {
-          id: taskId,
+          id: id,
           userId: global.user_id,
         },
       },
@@ -134,8 +136,8 @@ const update = async (req, res, next = () => {}) => {
 };
 
 const deleteTask = async (req, res, next = () => {}) => {
-  const taskId = parseInt(req.params?.id);
-  if (!taskId || isNaN(taskId)) {
+  const id = parseInt(req.params?.id);
+  if (!id || isNaN(id)) {
     return res.status(400).json({ message: "The task ID passed is not valid." });
   }
 
@@ -143,7 +145,7 @@ const deleteTask = async (req, res, next = () => {}) => {
     const deletedTask = await prisma.task.delete({
       where: {
         id_userId: {
-          id: taskId,
+          id: id,
           userId: global.user_id,
         },
       },
