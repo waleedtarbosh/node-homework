@@ -39,10 +39,6 @@ const index = async (req, res, next = () => {}) => {
       select: { id: true, title: true, isCompleted: true },
     });
 
-    if (tasks.length === 0) {
-      return res.status(404).json({ message: "No tasks found for this user." });
-    }
-
     const formattedRows = tasks.map((row) => ({
       id: row.id,
       title: row.title,
@@ -62,13 +58,21 @@ const show = async (req, res, next = () => {}) => {
   }
 
   try {
-    const task = await prisma.task.findUniqueOrThrow({
+    const task = await prisma.task.findUnique({
       where: {
-        id: taskId,
-        userId: global.user_id,
+        id_userId: {
+          id: taskId,
+          userId: global.user_id,
+        },
       },
       select: { id: true, title: true, isCompleted: true },
     });
+
+    if (!task) {
+      const error = new Error("The task was not found.");
+      error.code = "P2025";
+      throw error;
+    }
 
     return res.status(200).json({
       id: task.id,
@@ -107,8 +111,10 @@ const update = async (req, res, next = () => {}) => {
 
     const updatedTask = await prisma.task.update({
       where: {
-        id: taskId,
-        userId: global.user_id,
+        id_userId: {
+          id: taskId,
+          userId: global.user_id,
+        },
       },
       data: taskChange,
       select: { id: true, title: true, isCompleted: true },
@@ -136,8 +142,10 @@ const deleteTask = async (req, res, next = () => {}) => {
   try {
     const deletedTask = await prisma.task.delete({
       where: {
-        id: taskId,
-        userId: global.user_id,
+        id_userId: {
+          id: taskId,
+          userId: global.user_id,
+        },
       },
       select: { id: true, title: true, isCompleted: true },
     });

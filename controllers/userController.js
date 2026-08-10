@@ -47,11 +47,11 @@ const register = async (req, res, next = () => {}) => {
     global.user_id = newUser.id;
 
     return res.status(201).json({ id: newUser.id, name: newUser.name, email: newUser.email });
-  } catch (e) {
-    if (e.code === "P2002") {
+  } catch (err) {
+    if (err.name === "PrismaClientKnownRequestError" && err.code === "P2002") {
       return res.status(400).json({ message: "Email already registered" });
     }
-    return next(e);
+    return next(err);
   }
 };
 
