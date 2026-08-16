@@ -6,7 +6,10 @@ const {
   show,
   update,
   deleteTask,
+  bulkCreate,
 } = require("../controllers/taskController");
+
+router.post("/bulk", bulkCreate); 
 
 router.post("/", create);
 router.get("/", index);
