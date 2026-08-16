@@ -3,7 +3,7 @@ const util = require("util");
 const scrypt = util.promisify(crypto.scrypt);
 
 const { userSchema } = require("../validation/userSchema");
-const pool = require("../db/pg-pool");
+const prisma = require("../db/prisma");
 
 if (typeof global.user_id === "undefined") global.user_id = null;
 
@@ -32,41 +32,45 @@ const register = async (req, res, next = () => {}) => {
   }
 
   try {
-
-
+    const normalizedEmail = value.email ? value.email.toLowerCase() : value.email;
     const hashedPassword = await hashPassword(value.password);
 
-    const result = await pool.query(
-      `INSERT INTO users (email, name, hashed_password) 
-       VALUES ($1, $2, $3) RETURNING id, email, name`,
-      [value.email, value.name, hashedPassword]
-    );
+    const newUser = await prisma.user.create({
+      data: { 
+        email: normalizedEmail, 
+        name: value.name, 
+        hashedPassword: hashedPassword 
+      },
+      select: { id: true, name: true, email: true }
+    });
 
-    const newUser = result.rows[0];
     global.user_id = newUser.id;
 
-    return res.status(201).json({ name: newUser.name, email: newUser.email });
-  } catch (e) {
-    if (e.code === "23505") {
+    return res.status(201).json({ id: newUser.id, name: newUser.name, email: newUser.email });
+  } catch (err) {
+    if (err.name === "PrismaClientKnownRequestError" && err.code === "P2002") {
       return res.status(400).json({ message: "Email already registered" });
     }
-    return next(e);
+    return next(err);
   }
 };
 
 const logon = async (req, res, next = () => {}) => {
   if (!req.body) req.body = {};
-  const { email, password } = req.body;
+  let { email, password } = req.body;
 
   try {
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    const normalizedEmail = email ? email.toLowerCase() : email;
 
-    if (result.rows.length === 0) {
+    const user = await prisma.user.findUnique({ 
+      where: { email: normalizedEmail }
+    });
+
+    if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    const user = result.rows[0];
-    const goodCredentials = await comparePassword(password, user.hashed_password);
+    const goodCredentials = await comparePassword(password, user.hashedPassword);
 
     if (goodCredentials) {
       global.user_id = user.id;
