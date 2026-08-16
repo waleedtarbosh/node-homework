@@ -35,21 +35,52 @@ const register = async (req, res, next = () => {}) => {
     const normalizedEmail = value.email ? value.email.toLowerCase() : value.email;
     const hashedPassword = await hashPassword(value.password);
 
-    const newUser = await prisma.user.create({
-      data: { 
-        email: normalizedEmail, 
-        name: value.name, 
-        hashedPassword: hashedPassword 
-      },
-      select: { id: true, name: true, email: true }
+    const result = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: { 
+          email: normalizedEmail, 
+          name: value.name, 
+          hashedPassword: hashedPassword 
+        },
+        select: { id: true, name: true, email: true, createdAt: true }
+      });
+
+      const welcomeTaskData = [
+        { title: "Complete your profile", userId: newUser.id, priority: "medium" },
+        { title: "Add your first task", userId: newUser.id, priority: "high" },
+        { title: "Explore the app", userId: newUser.id, priority: "low" }
+      ];
+      await tx.task.createMany({ data: welcomeTaskData });
+
+      const welcomeTasks = await tx.task.findMany({
+        where: {
+          userId: newUser.id,
+          title: { in: welcomeTaskData.map(t => t.title) }
+        },
+        select: {
+          id: true,
+          title: true,
+          isCompleted: true,
+          userId: true,
+          priority: true,
+          createdAt: true
+        }
+      });
+
+      return { user: newUser, welcomeTasks };
     });
 
-    global.user_id = newUser.id;
+    global.user_id = result.user.id;
 
-    return res.status(201).json({ id: newUser.id, name: newUser.name, email: newUser.email });
+    return res.status(201).json({ 
+      user: result.user, 
+      welcomeTasks: result.welcomeTasks, 
+      transactionStatus: "success" 
+    });
+
   } catch (err) {
-    if (err.name === "PrismaClientKnownRequestError" && err.code === "P2002") {
-      return res.status(400).json({ message: "Email already registered" });
+    if (err.code === "P2002") {
+      return res.status(400).json({ error: "Email already registered" });
     }
     return next(err);
   }
