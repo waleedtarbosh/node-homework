@@ -17,16 +17,13 @@ const create = async (req, res, next = () => {}) => {
       data: {
         title: value.title,
         isCompleted: value.isCompleted ?? false,
+        priority: value.priority || "medium",
         userId: global.user_id,
       },
-      select: { id: true, title: true, isCompleted: true },
+      select: { id: true, title: true, isCompleted: true, priority: true, createdAt: true },
     });
 
-    return res.status(201).json({
-      id: newTask.id,
-      title: newTask.title,
-      isCompleted: newTask.isCompleted,
-    });
+    return res.status(201).json(newTask);
   } catch (err) {
     return next(err);
   }
@@ -34,22 +31,63 @@ const create = async (req, res, next = () => {}) => {
 
 const index = async (req, res, next = () => {}) => {
   try {
-    const tasks = await prisma.task.findMany({
-      where: { userId: global.user_id },
-      select: { id: true, title: true, isCompleted: true },
-    });
+    // 1. Pagination Setup
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
 
-    if (tasks.length === 0) {
-      return res.status(404).json({ message: "No tasks found for this user." });
+    // 2. Search Filter Setup
+    const whereClause = { userId: global.user_id };
+    if (req.query.find) {
+      whereClause.title = {
+        contains: req.query.find,
+        mode: 'insensitive'
+      };
     }
 
-    const formattedRows = tasks.map((row) => ({
-      id: row.id,
-      title: row.title,
-      isCompleted: row.isCompleted,
-    }));
+    // 3. Sorting Setup (Optional but recommended)
+    const validSortFields = ["title", "priority", "createdAt", "id", "isCompleted"];
+    const sortBy = req.query.sortBy && validSortFields.includes(req.query.sortBy) ? req.query.sortBy : "createdAt";
+    const sortDirection = req.query.sortDirection === "asc" ? "asc" : "desc";
 
-    return res.status(200).json(formattedRows);
+    // 4. Get Tasks with Eager Loading
+    const tasks = await prisma.task.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        title: true,
+        isCompleted: true,
+        priority: true,
+        createdAt: true,
+        User: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      },
+      skip: skip,
+      take: limit,
+      orderBy: { [sortBy]: sortDirection }
+    });
+
+    // 5. Get Total Count for Pagination
+    const totalTasks = await prisma.task.count({
+      where: whereClause
+    });
+
+    // 6. Build Pagination Object
+    const pagination = {
+      page,
+      limit,
+      total: totalTasks,
+      pages: Math.ceil(totalTasks / limit),
+      hasNext: page * limit < totalTasks,
+      hasPrev: page > 1
+    };
+
+    // Return tasks array and pagination object
+    return res.status(200).json({ tasks, pagination });
   } catch (err) {
     return next(err);
   }
@@ -69,18 +107,26 @@ const show = async (req, res, next = () => {}) => {
           userId: global.user_id,
         },
       },
-      select: { id: true, title: true, isCompleted: true },
+      select: { 
+        id: true, 
+        title: true, 
+        isCompleted: true, 
+        priority: true, 
+        createdAt: true,
+        User: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      },
     });
 
     if (!task) {
       return res.status(404).json({ message: "The task was not found." });
     }
 
-    return res.status(200).json({
-      id: task.id,
-      title: task.title,
-      isCompleted: task.isCompleted,
-    });
+    return res.status(200).json(task);
   } catch (err) {
     if (err.code === "P2025") {
       return res.status(404).json({ message: "The task was not found." });
@@ -119,14 +165,10 @@ const update = async (req, res, next = () => {}) => {
         },
       },
       data: taskChange,
-      select: { id: true, title: true, isCompleted: true },
+      select: { id: true, title: true, isCompleted: true, priority: true, createdAt: true },
     });
 
-    return res.status(200).json({
-      id: updatedTask.id,
-      title: updatedTask.title,
-      isCompleted: updatedTask.isCompleted,
-    });
+    return res.status(200).json(updatedTask);
   } catch (err) {
     if (err.code === "P2025") {
       return res.status(404).json({ message: "The task was not found." });
@@ -149,14 +191,10 @@ const deleteTask = async (req, res, next = () => {}) => {
           userId: global.user_id,
         },
       },
-      select: { id: true, title: true, isCompleted: true },
+      select: { id: true, title: true, isCompleted: true, priority: true, createdAt: true },
     });
 
-    return res.status(200).json({
-      id: deletedTask.id,
-      title: deletedTask.title,
-      isCompleted: deletedTask.isCompleted,
-    });
+    return res.status(200).json(deletedTask);
   } catch (err) {
     if (err.code === "P2025") {
       return res.status(404).json({ message: "The task was not found." });
