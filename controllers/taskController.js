@@ -18,7 +18,7 @@ const create = async (req, res, next = () => {}) => {
         title: value.title,
         isCompleted: value.isCompleted ?? false,
         priority: value.priority || "medium",
-        userId: global.user_id,
+        userId: req.user.id,
       },
       select: { id: true, title: true, isCompleted: true, priority: true, createdAt: true },
     });
@@ -31,13 +31,11 @@ const create = async (req, res, next = () => {}) => {
 
 const index = async (req, res, next = () => {}) => {
   try {
-    // 1. Pagination Setup
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // 2. Search Filter Setup
-    const whereClause = { userId: global.user_id };
+    const whereClause = { userId: req.user.id };
     if (req.query.find) {
       whereClause.title = {
         contains: req.query.find,
@@ -45,12 +43,10 @@ const index = async (req, res, next = () => {}) => {
       };
     }
 
-    // 3. Sorting Setup (Optional but recommended)
     const validSortFields = ["title", "priority", "createdAt", "id", "isCompleted"];
     const sortBy = req.query.sortBy && validSortFields.includes(req.query.sortBy) ? req.query.sortBy : "createdAt";
     const sortDirection = req.query.sortDirection === "asc" ? "asc" : "desc";
 
-    // 4. Get Tasks with Eager Loading
     const tasks = await prisma.task.findMany({
       where: whereClause,
       select: {
@@ -71,12 +67,10 @@ const index = async (req, res, next = () => {}) => {
       orderBy: { [sortBy]: sortDirection }
     });
 
-    // 5. Get Total Count for Pagination
     const totalTasks = await prisma.task.count({
       where: whereClause
     });
 
-    // 6. Build Pagination Object
     const pagination = {
       page,
       limit,
@@ -86,7 +80,6 @@ const index = async (req, res, next = () => {}) => {
       hasPrev: page > 1
     };
 
-    // Return tasks array and pagination object
     return res.status(200).json({ tasks, pagination });
   } catch (err) {
     return next(err);
@@ -104,7 +97,7 @@ const show = async (req, res, next = () => {}) => {
       where: {
         id_userId: {
           id: id,
-          userId: global.user_id,
+          userId: req.user.id,
         },
       },
       select: { 
@@ -161,7 +154,7 @@ const update = async (req, res, next = () => {}) => {
       where: {
         id_userId: {
           id: id,
-          userId: global.user_id,
+          userId: req.user.id,
         },
       },
       data: taskChange,
@@ -188,7 +181,7 @@ const deleteTask = async (req, res, next = () => {}) => {
       where: {
         id_userId: {
           id: id,
-          userId: global.user_id,
+          userId: req.user.id,
         },
       },
       select: { id: true, title: true, isCompleted: true, priority: true, createdAt: true },
@@ -203,11 +196,9 @@ const deleteTask = async (req, res, next = () => {}) => {
   }
 };
 
-// NEW: Bulk Create function
 const bulkCreate = async (req, res, next = () => {}) => {
   const { tasks } = req.body;
 
-  // Validate the tasks array
   if (!tasks || !Array.isArray(tasks) || tasks.length === 0) {
     return res.status(400).json({ 
       error: "Invalid request data. Expected an array of tasks." 
@@ -227,7 +218,7 @@ const bulkCreate = async (req, res, next = () => {}) => {
       title: value.title,
       isCompleted: value.isCompleted || false,
       priority: value.priority || 'medium',
-      userId: global.user_id
+      userId: req.user.id
     });
   }
 
