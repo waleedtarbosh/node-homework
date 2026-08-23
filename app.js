@@ -1,15 +1,34 @@
 const express = require("express");
 const app = express();
 
+app.set("trust proxy", 1);
+
+const helmet = require("helmet");
+const { xss } = require("express-xss-sanitizer");
+const rateLimiter = require("express-rate-limit");
+const cookieParser = require("cookie-parser");
+
 const userRoutes = require("./routes/userRoutes");
 const notFound = require("./middleware/not-found");
 const errorHandler = require("./middleware/error-handler");
 const prisma = require("./db/prisma");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const timeRouter = require("./routes/timeRoutes");
+const taskRouter = require("./routes/taskRoutes");
 
-global.user_id = null;
+const jwtMiddleware = require("./middleware/jwtMiddleware");
 
+app.use(
+  rateLimiter({
+    windowMs: 15 * 60 * 1000, 
+    max: 100, 
+  })
+);
+
+app.use(helmet());
+app.use(cookieParser());
 app.use(express.json());
+app.use(xss());
 
 app.get("/", (req, res) => {
   res.send("Hello, World!");
@@ -30,16 +49,11 @@ app.post("/testpost", (req, res) => {
   });
 });
 
-const timeRouter = require("./routes/timeRoutes");
 app.use("/api", timeRouter);
-
 app.use("/api/users", userRoutes);
 
-const authMiddleware = require("./middleware/auth");
-const taskRouter = require("./routes/taskRoutes");
-
-app.use("/api/tasks", authMiddleware, taskRouter);
-app.use("/api/analytics", authMiddleware, analyticsRoutes);
+app.use("/api/tasks", jwtMiddleware, taskRouter);
+app.use("/api/analytics", jwtMiddleware, analyticsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
