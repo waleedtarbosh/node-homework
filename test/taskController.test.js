@@ -1,5 +1,5 @@
 require("dotenv").config();
-process.env.DATABASE_URL = process.env.TEST_DATABASE_URL; // point to the test database!
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 
 const prisma = require("../db/prisma");
 const httpMocks = require("node-mocks-http");
