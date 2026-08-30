@@ -1,11 +1,28 @@
 const crypto = require("crypto");
+const { randomUUID } = require("crypto");
 const util = require("util");
 const scrypt = util.promisify(crypto.scrypt);
+const jwt = require("jsonwebtoken");
 
 const { userSchema } = require("../validation/userSchema");
 const prisma = require("../db/prisma");
 
-if (typeof global.user_id === "undefined") global.user_id = null;
+// JWT & Cookie Helper Functions
+const cookieFlags = () => {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", 
+    sameSite: "Strict",
+  };
+};
+
+const setJwtCookie = (req, res, user) => {
+  const payload = { id: user.id, csrfToken: randomUUID() };
+  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "1h" }); 
+  
+  res.cookie("jwt", token, { ...cookieFlags(), maxAge: 3600000 }); 
+  return payload.csrfToken; 
+};
 
 async function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString("hex");
@@ -70,9 +87,12 @@ const register = async (req, res, next = () => {}) => {
       return { user: newUser, welcomeTasks };
     });
 
-    global.user_id = result.user.id;
+    const csrfToken = setJwtCookie(req, res, result.user);
 
     return res.status(201).json({ 
+      name: result.user.name,
+      email: result.user.email,
+      csrfToken: csrfToken,
       user: result.user, 
       welcomeTasks: result.welcomeTasks, 
       transactionStatus: "success" 
@@ -104,8 +124,13 @@ const logon = async (req, res, next = () => {}) => {
     const goodCredentials = await comparePassword(password, user.hashedPassword);
 
     if (goodCredentials) {
-      global.user_id = user.id;
-      return res.status(200).json({ name: user.name, email: user.email });
+      const csrfToken = setJwtCookie(req, res, user);
+      
+      return res.status(200).json({ 
+        name: user.name, 
+        email: user.email, 
+        csrfToken: csrfToken
+      });
     } else {
       return res.status(401).json({ message: "Invalid email or password" });
     }
@@ -115,7 +140,7 @@ const logon = async (req, res, next = () => {}) => {
 };
 
 const logoff = (req, res) => {
-  global.user_id = null;
+  res.clearCookie("jwt", cookieFlags());
   return res.status(200).send();
 };
 
