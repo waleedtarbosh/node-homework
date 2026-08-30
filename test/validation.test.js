@@ -8,7 +8,7 @@ describe("user object validation tests", () => {
       { abortEarly: false },
     );
     expect(
-      error.details.find((detail) => detail.context.key == "password"),
+      error?.details?.find((detail) => detail.context.key == "password"),
     ).toBeDefined();
   });
 
@@ -18,7 +18,7 @@ describe("user object validation tests", () => {
       { abortEarly: false },
     );
     expect(
-      error.details.find((detail) => detail.context.key == "email"),
+      error?.details?.find((detail) => detail.context.key == "email"),
     ).toBeDefined();
   });
 
@@ -28,7 +28,7 @@ describe("user object validation tests", () => {
       { abortEarly: false },
     );
     expect(
-      error.details.find((detail) => detail.context.key == "email"),
+      error?.details?.find((detail) => detail.context.key == "email"),
     ).toBeDefined();
   });
 
@@ -38,7 +38,7 @@ describe("user object validation tests", () => {
       { abortEarly: false },
     );
     expect(
-      error.details.find((detail) => detail.context.key == "password"),
+      error?.details?.find((detail) => detail.context.key == "password"),
     ).toBeDefined();
   });
 
@@ -48,7 +48,7 @@ describe("user object validation tests", () => {
       { abortEarly: false },
     );
     expect(
-      error.details.find((detail) => detail.context.key == "name"),
+      error?.details?.find((detail) => detail.context.key == "name"),
     ).toBeDefined();
   });
 
@@ -58,7 +58,7 @@ describe("user object validation tests", () => {
       { abortEarly: false },
     );
     expect(
-      error.details.find((detail) => detail.context.key == "name"),
+      error?.details?.find((detail) => detail.context.key == "name"),
     ).toBeDefined();
   });
 
@@ -78,7 +78,7 @@ describe("task object validation tests", () => {
       { abortEarly: false },
     );
     expect(
-      error.details.find((detail) => detail.context.key == "title"),
+      error?.details?.find((detail) => detail.context.key == "title"),
     ).toBeDefined();
   });
 
@@ -88,7 +88,7 @@ describe("task object validation tests", () => {
       { abortEarly: false },
     );
     expect(
-      error.details.find((detail) => detail.context.key == "isCompleted"),
+      error?.details?.find((detail) => detail.context.key == "isCompleted"),
     ).toBeDefined();
   });
 
