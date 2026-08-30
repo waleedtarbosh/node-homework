@@ -116,17 +116,37 @@ describe("test getting created tasks", () => {
     expect(saveRes.statusCode).toBe(200);
   });
 
-  it("22. The returned object has a tasks array of length 1.", () => {
-    saveData = saveRes._getJSONData();
-    expect(saveData.tasks).toHaveLength(1);
+  it("22. The returned object has a tasks array of length 1.", async () => {
+    const req = httpMocks.createRequest({
+      method: "GET",
+      user: { id: user1.id },
+    });
+    const res = httpMocks.createResponse({ eventEmitter: EventEmitter });
+    await waitForRouteHandlerCompletion(index, req, res);
+    const data = res._getJSONData();
+    expect(data.tasks).toHaveLength(1);
   });
 
-  it("23. The title in the first array object is as expected.", () => {
-    expect(saveData.tasks[0].title).toBe("first task");
+  it("23. The title in the first array object is as expected.", async () => {
+    const req = httpMocks.createRequest({
+      method: "GET",
+      user: { id: user1.id },
+    });
+    const res = httpMocks.createResponse({ eventEmitter: EventEmitter });
+    await waitForRouteHandlerCompletion(index, req, res);
+    const data = res._getJSONData();
+    expect(data.tasks[0].title).toBe("first task");
   });
 
-  it("24. The first array object does not contain a userId.", () => {
-    expect(saveData.tasks[0].userId).toBeUndefined();
+  it("24. The first array object does not contain a userId.", async () => {
+    const req = httpMocks.createRequest({
+      method: "GET",
+      user: { id: user1.id },
+    });
+    const res = httpMocks.createResponse({ eventEmitter: EventEmitter });
+    await waitForRouteHandlerCompletion(index, req, res);
+    const data = res._getJSONData();
+    expect(data.tasks[0].userId).toBeUndefined();
   });
 
   it("25. If you get the list of tasks using the userId from user2, you get a 404.", async () => {
