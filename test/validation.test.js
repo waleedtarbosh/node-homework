@@ -93,7 +93,7 @@ describe("task object validation tests", () => {
   });
 
   it("10. If an isCompleted value is not specified but the rest of the object is valid, a default of false is provided by validation.", () => {
-    const { error, value } = taskSchema.validate(
+    const { value } = taskSchema.validate(
       { title: "Buy groceries" },
       { abortEarly: false },
     );
@@ -101,7 +101,7 @@ describe("task object validation tests", () => {
   });
 
   it("11. If isCompleted in the provided object has the value true, it remains true after validation.", () => {
-    const { error, value } = taskSchema.validate(
+    const { value } = taskSchema.validate(
       { title: "Buy groceries", isCompleted: true },
       { abortEarly: false },
     );
