@@ -52,18 +52,17 @@ it("47. Registration returns an object with the expected name", () => {
   });
 
 it("51. Verify that you can log out", async () => {
-    const csrfToken = saveRes.body.csrfToken; 
-    const res = await agent.post("/api/users/logoff").set("X-CSRF-TOKEN", csrfToken);
+    const setCookieArray = saveRes.headers['set-cookie'];
+    const jwtCookieStr = setCookieArray.find((str) => str.startsWith("jwt="));
+    const tokenPart = jwtCookieStr.split(';')[0].split('=')[1];
+    const decoded = require('jsonwebtoken').decode(tokenPart);
+    
+    const res = await agent.post("/api/users/logoff").set("X-CSRF-TOKEN", decoded.csrfToken);
     expect(res.status).toBe(200);
-    agent.loggedOut = true; 
   });
 
   it("52. Make sure that you are really logged out: /api/tasks should now return a 401", async () => {
     const res = await agent.get("/api/tasks");
-    if (agent.loggedOut) {
-      expect(res.status).toBe(401);
-    } else {
-      expect(res.status).toBe(200);
-    }
+    expect(res.status).toBe(401);
   });
 });
