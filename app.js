@@ -27,7 +27,9 @@ app.use(
 
 app.use(helmet());
 app.use(cookieParser());
-app.use(express.json());
+
+app.use(express.json({ limit: "1mb" }));
+
 app.use(xss());
 
 app.get("/", (req, res) => {
