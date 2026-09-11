@@ -1,0 +1,231 @@
+{
+  "info": {
+    "name": "Node Homework - Recycle Bin Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Register (Run once)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.csrfToken) {",
+              "    pm.environment.set(\"csrf_token\", jsonData.csrfToken);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Recaptcha-Test",
+            "value": "my-super-secret-bypass-for-testing-123",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"new_test_user@example.com\",\n  \"password\": \"Pa$$word20\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/register",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "register"
+          ]
+        }
+      }
+    },
+    {
+      "name": "1. Logon (Auto-saves Token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.csrfToken) {",
+              "    pm.environment.set(\"csrf_token\", jsonData.csrfToken);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"new_test_user@example.com\",\n  \"password\": \"Pa$$word20\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/logon",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "logon"
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Create a Task (Auto-saves ID)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "if (jsonData.id) {",
+              "    pm.environment.set(\"task_id\", jsonData.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-CSRF-TOKEN",
+            "value": "{{csrf_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Task for testing Recycle Bin\",\n  \"priority\": \"high\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/tasks",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "tasks"
+          ]
+        }
+      }
+    },
+    {
+      "name": "3. Soft Delete (Move to Trash)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-CSRF-TOKEN",
+            "value": "{{csrf_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/tasks/{{task_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "tasks",
+            "{{task_id}}"
+          ]
+        }
+      }
+    },
+    {
+      "name": "4. View Trash",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tasks/trash",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "tasks",
+            "trash"
+          ]
+        }
+      }
+    },
+    {
+      "name": "5. Restore Task",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "X-CSRF-TOKEN",
+            "value": "{{csrf_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/tasks/{{task_id}}/restore",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "tasks",
+            "{{task_id}}",
+            "restore"
+          ]
+        }
+      }
+    },
+    {
+      "name": "6. Empty Trash",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "X-CSRF-TOKEN",
+            "value": "{{csrf_token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/tasks/trash",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "tasks",
+            "trash"
+          ]
+        }
+      }
+    }
+  ]
+}

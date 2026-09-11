@@ -1,2 +1,154 @@
 Backend Server URL:
 https://node-homework-7qk5.onrender.com
+
+============================================================
+FEATURES
+============================================================
+
+1. PAGINATION
+   - All task listing supports pagination via query parameters.
+   - Query params: ?page=1&limit=10
+   - Response includes: { tasks, pagination: { page, limit, total, pages, hasNext, hasPrev } }
+
+2. FILTERING / SEARCH
+   - Filter tasks by title using a search term.
+   - Query param: ?find=groceries (case-insensitive partial match)
+   - Example: GET /api/tasks?find=test
+
+3. SORTING
+   - Sort tasks by any valid field.
+   - Query params: ?sortBy=priority&sortDirection=asc
+   - Valid sort fields: title, priority, createdAt, id, isCompleted
+   - Default: createdAt desc
+
+4. BULK CREATE TASKS
+   - Create multiple tasks in a single request.
+   - Path: POST /api/tasks/bulk
+   - Headers: X-CSRF-TOKEN: <csrfToken>
+   - Body: { "tasks": [{ "title": "Task 1", "priority": "high" }, { "title": "Task 2" }] }
+   - Response: { message: "success!", tasksCreated: 2, totalRequested: 2 }
+
+5. ANALYTICS DASHBOARD
+   - User productivity stats, recent tasks, and weekly progress.
+   - Path: GET /api/analytics/users/:id
+   - Response: { taskStats, recentTasks, weeklyProgress }
+
+   - User list with task counts (paginated).
+   - Path: GET /api/analytics/users?page=1&limit=10
+   - Response: { users (with _count and incomplete tasks), pagination }
+
+   - Advanced task search across all users using raw SQL.
+   - Path: GET /api/analytics/tasks/search?q=searchterm&limit=20
+   - Response: { results, query, count }
+
+6. reCAPTCHA VERIFICATION
+   - Bot protection on user registration.
+   - Registration requires either a valid reCAPTCHA token in the body
+     or the X-Recaptcha-Test header for testing/Postman use.
+
+============================================================
+API DOCUMENTATION
+============================================================
+
+--- USER ROUTES (No auth required for register/logon) ---
+
+POST /api/users/register
+  Headers: X-Recaptcha-Test: <bypass_key> (for testing)
+  Body: { "name": "John", "email": "john@example.com", "password": "Pa$$word20" }
+  Response 201: { name, email, csrfToken, user, welcomeTasks }
+
+POST /api/users/logon
+  Body: { "email": "john@example.com", "password": "Pa$$word20" }
+  Response 200: { name, email, csrfToken }
+
+POST /api/users/logoff (Auth required)
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Response 200: (empty)
+
+--- TASK ROUTES (All require JWT auth via cookie) ---
+
+POST /api/tasks
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Body: { "title": "My task", "priority": "high" }
+  Response 201: { id, title, isCompleted, priority, createdAt }
+
+GET /api/tasks
+  Query params: ?page=1&limit=10&find=search&sortBy=createdAt&sortDirection=desc
+  Response 200: { tasks: [...], pagination: { page, limit, total, pages, hasNext, hasPrev } }
+
+GET /api/tasks/:id
+  Response 200: { id, title, isCompleted, priority, createdAt, User: { name, email } }
+
+PATCH /api/tasks/:id
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Body: { "title": "Updated", "isCompleted": true, "priority": "low" } (all optional, at least one required)
+  Response 200: { id, title, isCompleted, priority, createdAt }
+
+DELETE /api/tasks/:id (Soft Delete - moves to trash)
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Response 200: { id, title, isCompleted, priority, createdAt, trash: true }
+
+POST /api/tasks/bulk
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Body: { "tasks": [{ "title": "Task 1", "priority": "high" }, { "title": "Task 2" }] }
+  Response 201: { message, tasksCreated, totalRequested }
+
+--- RECYCLE BIN ROUTES (All require JWT auth via cookie) ---
+
+GET /api/tasks/trash
+  Description: View all trashed (soft-deleted) tasks for the logged-in user.
+  Response 200: { tasks: [...], count: number }
+
+PATCH /api/tasks/:id/restore
+  Description: Restore a trashed task back to the active task list.
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Response 200: { id, title, isCompleted, priority, createdAt, trash: false }
+
+DELETE /api/tasks/trash
+  Description: Permanently delete all trashed tasks (empty the recycle bin).
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Response 200: { message: "Trash emptied", deletedCount: number }
+
+--- ANALYTICS ROUTES (All require JWT auth via cookie) ---
+
+GET /api/analytics/users
+  Query params: ?page=1&limit=10
+  Response 200: { users, pagination }
+
+GET /api/analytics/users/:id
+  Response 200: { taskStats, recentTasks, weeklyProgress }
+
+GET /api/analytics/tasks/search
+  Query params: ?q=searchterm&limit=20
+  Response 200: { results, query, count }
+
+============================================================
+EXTRA FEATURES (Added in Assignment 11)
+============================================================
+
+RECYCLE BIN (Soft Delete)
+  - Instead of permanently deleting tasks, DELETE /api/tasks/:id now moves
+    tasks to a recycle bin by setting a "trash" flag to true.
+  - Trashed tasks are excluded from the normal task list (GET /api/tasks).
+  - Users can view their trashed tasks via GET /api/tasks/trash.
+  - Users can restore a trashed task via PATCH /api/tasks/:id/restore.
+  - Users can permanently delete all trashed tasks via DELETE /api/tasks/trash.
+  - This is a common production best practice (soft delete) that protects
+    users from accidental data loss.
+
+============================================================
+HOW TO TEST (Using Postman)
+============================================================
+A complete Postman Collection is included in the `postman/` directory:
+- `RecycleBin_Tests.postman_collection.json`
+- `RecycleBin_Environment.postman_environment.json`
+
+Steps to test the Recycle Bin feature:
+1. Import both the Collection and the Environment into Postman.
+2. Select the "Node Homework Local Env" environment in Postman.
+3. Run "0. Register" to create a new user (or run "1. Logon" if the user already exists). This auto-saves the CSRF token.
+4. Run "2. Create a Task" to create a task (this auto-saves the Task ID).
+5. Run "3. Soft Delete" to delete the task (notice it returns trash: true).
+6. Run "4. View Trash" to see the task sitting in the recycle bin.
+7. Run "5. Restore Task" to restore the task back to the active list.
+8. Run "3. Soft Delete" again, then run "6. Empty Trash" to permanently delete it.
