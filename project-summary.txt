@@ -1,2 +1,107 @@
 Backend Server URL:
 https://node-homework-7qk5.onrender.com
+
+============================================================
+FEATURES
+============================================================
+
+1. PAGINATION
+   - All task listing supports pagination via query parameters.
+   - Query params: ?page=1&limit=10
+   - Response includes: { tasks, pagination: { page, limit, total, pages, hasNext, hasPrev } }
+
+2. FILTERING / SEARCH
+   - Filter tasks by title using a search term.
+   - Query param: ?find=groceries (case-insensitive partial match)
+   - Example: GET /api/tasks?find=test
+
+3. SORTING
+   - Sort tasks by any valid field.
+   - Query params: ?sortBy=priority&sortDirection=asc
+   - Valid sort fields: title, priority, createdAt, id, isCompleted
+   - Default: createdAt desc
+
+4. BULK CREATE TASKS
+   - Create multiple tasks in a single request.
+   - Path: POST /api/tasks/bulk
+   - Headers: X-CSRF-TOKEN: <csrfToken>
+   - Body: { "tasks": [{ "title": "Task 1", "priority": "high" }, { "title": "Task 2" }] }
+   - Response: { message: "success!", tasksCreated: 2, totalRequested: 2 }
+
+5. ANALYTICS DASHBOARD
+   - User productivity stats, recent tasks, and weekly progress.
+   - Path: GET /api/analytics/users/:id
+   - Response: { taskStats, recentTasks, weeklyProgress }
+
+   - User list with task counts (paginated).
+   - Path: GET /api/analytics/users?page=1&limit=10
+   - Response: { users (with _count and incomplete tasks), pagination }
+
+   - Advanced task search across all users using raw SQL.
+   - Path: GET /api/analytics/tasks/search?q=searchterm&limit=20
+   - Response: { results, query, count }
+
+6. reCAPTCHA VERIFICATION
+   - Bot protection on user registration.
+   - Registration requires either a valid reCAPTCHA token in the body
+     or the X-Recaptcha-Test header for testing/Postman use.
+
+============================================================
+API DOCUMENTATION
+============================================================
+
+--- USER ROUTES (No auth required for register/logon) ---
+
+POST /api/users/register
+  Headers: X-Recaptcha-Test: <bypass_key> (for testing)
+  Body: { "name": "John", "email": "john@example.com", "password": "Pa$$word20" }
+  Response 201: { name, email, csrfToken, user, welcomeTasks }
+
+POST /api/users/logon
+  Body: { "email": "john@example.com", "password": "Pa$$word20" }
+  Response 200: { name, email, csrfToken }
+
+POST /api/users/logoff (Auth required)
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Response 200: (empty)
+
+--- TASK ROUTES (All require JWT auth via cookie) ---
+
+POST /api/tasks
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Body: { "title": "My task", "priority": "high" }
+  Response 201: { id, title, isCompleted, priority, createdAt }
+
+GET /api/tasks
+  Query params: ?page=1&limit=10&find=search&sortBy=createdAt&sortDirection=desc
+  Response 200: { tasks: [...], pagination: { page, limit, total, pages, hasNext, hasPrev } }
+
+GET /api/tasks/:id
+  Response 200: { id, title, isCompleted, priority, createdAt, User: { name, email } }
+
+PATCH /api/tasks/:id
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Body: { "title": "Updated", "isCompleted": true, "priority": "low" } (all optional, at least one required)
+  Response 200: { id, title, isCompleted, priority, createdAt }
+
+DELETE /api/tasks/:id
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Response 200: { id, title, isCompleted, priority, createdAt }
+
+POST /api/tasks/bulk
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Body: { "tasks": [{ "title": "Task 1", "priority": "high" }, { "title": "Task 2" }] }
+  Response 201: { message, tasksCreated, totalRequested }
+
+--- ANALYTICS ROUTES (All require JWT auth via cookie) ---
+
+GET /api/analytics/users
+  Query params: ?page=1&limit=10
+  Response 200: { users, pagination }
+
+GET /api/analytics/users/:id
+  Response 200: { taskStats, recentTasks, weeklyProgress }
+
+GET /api/analytics/tasks/search
+  Query params: ?q=searchterm&limit=20
+  Response 200: { results, query, count }
