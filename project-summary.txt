@@ -135,3 +135,20 @@ RECYCLE BIN (Soft Delete)
   - Users can permanently delete all trashed tasks via DELETE /api/tasks/trash.
   - This is a common production best practice (soft delete) that protects
     users from accidental data loss.
+
+============================================================
+HOW TO TEST (Using Postman)
+============================================================
+A complete Postman Collection is included in the `postman/` directory:
+- `RecycleBin_Tests.postman_collection.json`
+- `RecycleBin_Environment.postman_environment.json`
+
+Steps to test the Recycle Bin feature:
+1. Import both the Collection and the Environment into Postman.
+2. Select the "Node Homework Local Env" environment in Postman.
+3. Run "0. Register" to create a new user (or run "1. Logon" if the user already exists). This auto-saves the CSRF token.
+4. Run "2. Create a Task" to create a task (this auto-saves the Task ID).
+5. Run "3. Soft Delete" to delete the task (notice it returns trash: true).
+6. Run "4. View Trash" to see the task sitting in the recycle bin.
+7. Run "5. Restore Task" to restore the task back to the active list.
+8. Run "3. Soft Delete" again, then run "6. Empty Trash" to permanently delete it.
