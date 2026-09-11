@@ -1,0 +1,83 @@
+{
+  "info": {
+    "name": "Assignment10 (Render Test)",
+    "description": "Collection to test the Assignment 10 backend on Render.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Register User (with Bypass)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Recaptcha-Test",
+            "value": "{{RECAPTCHA_BYPASS}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Postman Tester\",\n  \"email\": \"postmantest99@example.com\",\n  \"password\": \"Password123!\"\n}"
+        },
+        "url": {
+          "raw": "{{urlBase}}/api/users/register",
+          "host": [
+            "{{urlBase}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "register"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Logon User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"postmantest99@example.com\",\n  \"password\": \"Password123!\"\n}"
+        },
+        "url": {
+          "raw": "{{urlBase}}/api/users/logon",
+          "host": [
+            "{{urlBase}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "logon"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{urlBase}}/health",
+          "host": [
+            "{{urlBase}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      }
+    }
+  ]
+}
