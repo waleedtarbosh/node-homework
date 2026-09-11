@@ -84,14 +84,30 @@ PATCH /api/tasks/:id
   Body: { "title": "Updated", "isCompleted": true, "priority": "low" } (all optional, at least one required)
   Response 200: { id, title, isCompleted, priority, createdAt }
 
-DELETE /api/tasks/:id
+DELETE /api/tasks/:id (Soft Delete - moves to trash)
   Headers: X-CSRF-TOKEN: <csrfToken>
-  Response 200: { id, title, isCompleted, priority, createdAt }
+  Response 200: { id, title, isCompleted, priority, createdAt, trash: true }
 
 POST /api/tasks/bulk
   Headers: X-CSRF-TOKEN: <csrfToken>
   Body: { "tasks": [{ "title": "Task 1", "priority": "high" }, { "title": "Task 2" }] }
   Response 201: { message, tasksCreated, totalRequested }
+
+--- RECYCLE BIN ROUTES (All require JWT auth via cookie) ---
+
+GET /api/tasks/trash
+  Description: View all trashed (soft-deleted) tasks for the logged-in user.
+  Response 200: { tasks: [...], count: number }
+
+PATCH /api/tasks/:id/restore
+  Description: Restore a trashed task back to the active task list.
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Response 200: { id, title, isCompleted, priority, createdAt, trash: false }
+
+DELETE /api/tasks/trash
+  Description: Permanently delete all trashed tasks (empty the recycle bin).
+  Headers: X-CSRF-TOKEN: <csrfToken>
+  Response 200: { message: "Trash emptied", deletedCount: number }
 
 --- ANALYTICS ROUTES (All require JWT auth via cookie) ---
 
@@ -105,3 +121,17 @@ GET /api/analytics/users/:id
 GET /api/analytics/tasks/search
   Query params: ?q=searchterm&limit=20
   Response 200: { results, query, count }
+
+============================================================
+EXTRA FEATURES (Added in Assignment 11)
+============================================================
+
+RECYCLE BIN (Soft Delete)
+  - Instead of permanently deleting tasks, DELETE /api/tasks/:id now moves
+    tasks to a recycle bin by setting a "trash" flag to true.
+  - Trashed tasks are excluded from the normal task list (GET /api/tasks).
+  - Users can view their trashed tasks via GET /api/tasks/trash.
+  - Users can restore a trashed task via PATCH /api/tasks/:id/restore.
+  - Users can permanently delete all trashed tasks via DELETE /api/tasks/trash.
+  - This is a common production best practice (soft delete) that protects
+    users from accidental data loss.
