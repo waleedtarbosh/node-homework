@@ -6,6 +6,7 @@ app.set("trust proxy", 1);
 const helmet = require("helmet");
 const { xss } = require("express-xss-sanitizer");
 const rateLimiter = require("express-rate-limit");
+const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 const userRoutes = require("./routes/userRoutes");
@@ -24,6 +25,11 @@ app.use(
     max: 100, 
   })
 );
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  credentials: true,
+}));
 
 app.use(helmet());
 app.use(cookieParser());

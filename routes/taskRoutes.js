@@ -7,9 +7,16 @@ const {
   update,
   deleteTask,
   bulkCreate,
+  getTrash,
+  restoreTask,
+  emptyTrash,
 } = require("../controllers/taskController");
 
 router.post("/bulk", bulkCreate); 
+
+router.get("/trash", getTrash);
+router.delete("/trash", emptyTrash);
+router.patch("/:id/restore", restoreTask);
 
 router.post("/", create);
 router.get("/", index);

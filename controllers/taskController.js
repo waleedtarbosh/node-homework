@@ -35,7 +35,7 @@ const index = async (req, res, next = () => {}) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const whereClause = { userId: req.user.id };
+    const whereClause = { userId: req.user.id, trash: false };
     if (req.query.find) {
       whereClause.title = {
         contains: req.query.find,
@@ -110,6 +110,7 @@ const show = async (req, res, next = () => {}) => {
         isCompleted: true, 
         priority: true, 
         createdAt: true,
+        trash: true,
         User: {
           select: {
             name: true,
@@ -119,7 +120,7 @@ const show = async (req, res, next = () => {}) => {
       },
     });
 
-    if (!task) {
+    if (!task || task.trash) {
       return res.status(404).json({ message: "The task was not found." });
     }
 
@@ -181,21 +182,75 @@ const deleteTask = async (req, res, next = () => {}) => {
   }
 
   try {
-    const deletedTask = await prisma.task.delete({
+    const trashedTask = await prisma.task.update({
       where: {
         id_userId: {
           id: id,
           userId: req.user.id,
         },
       },
-      select: { id: true, title: true, isCompleted: true, priority: true, createdAt: true },
+      data: { trash: true },
+      select: { id: true, title: true, isCompleted: true, priority: true, createdAt: true, trash: true },
     });
 
-    return res.status(200).json(deletedTask);
+    return res.status(200).json(trashedTask);
   } catch (err) {
     if (err.code === "P2025") {
       return res.status(404).json({ message: "The task was not found." });
     }
+    return next(err);
+  }
+};
+
+const getTrash = async (req, res, next = () => {}) => {
+  try {
+    const trashedTasks = await prisma.task.findMany({
+      where: { userId: req.user.id, trash: true },
+      select: { id: true, title: true, isCompleted: true, priority: true, createdAt: true, trash: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.status(200).json({ tasks: trashedTasks, count: trashedTasks.length });
+  } catch (err) {
+    return next(err);
+  }
+};
+
+const restoreTask = async (req, res, next = () => {}) => {
+  const id = parseInt(req.params?.id);
+  if (!id || isNaN(id)) {
+    return res.status(400).json({ message: "The task ID passed is not valid." });
+  }
+
+  try {
+    const restoredTask = await prisma.task.update({
+      where: {
+        id_userId: {
+          id: id,
+          userId: req.user.id,
+        },
+      },
+      data: { trash: false },
+      select: { id: true, title: true, isCompleted: true, priority: true, createdAt: true, trash: true },
+    });
+
+    return res.status(200).json(restoredTask);
+  } catch (err) {
+    if (err.code === "P2025") {
+      return res.status(404).json({ message: "The task was not found." });
+    }
+    return next(err);
+  }
+};
+
+const emptyTrash = async (req, res, next = () => {}) => {
+  try {
+    const result = await prisma.task.deleteMany({
+      where: { userId: req.user.id, trash: true },
+    });
+
+    return res.status(200).json({ message: "Trash emptied", deletedCount: result.count });
+  } catch (err) {
     return next(err);
   }
 };
@@ -249,4 +304,7 @@ module.exports = {
   update,
   deleteTask,
   bulkCreate,
+  getTrash,
+  restoreTask,
+  emptyTrash,
 };
